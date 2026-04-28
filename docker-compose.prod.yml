@@ -1,13 +1,22 @@
-version: "3.8"
-
-# ================================================================
-# Docker Compose para PRODUÇÃO — Hetzner VPS
-# Backend usa Upstash Redis (externo), sem Redis local
-# ================================================================
-
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=evolution
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=evolution_secret_2024
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   evolution-api:
-    image: atendai/evolution-api:latest
+    image: atendai/evolution-api:v2.2.3
     container_name: evolution_api
     restart: always
     ports:
@@ -15,14 +24,27 @@ services:
     environment:
       - SERVER_URL=http://${VPS_IP}:8080
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
-      - DATABASE_ENABLED=false
-      - REDIS_ENABLED=false
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution_secret_2024@postgres:5432/evolution
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_UPDATE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - CACHE_REDIS_ENABLED=false
+      - CACHE_LOCAL_ENABLED=true
       - WEBHOOK_GLOBAL_ENABLED=true
       - WEBHOOK_GLOBAL_URL=http://${VPS_IP}:3000/webhook/evolution
       - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
-      - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
+      - DEL_INSTANCE=false
+      - LOG_LEVEL=ERROR
     volumes:
       - evolution_instances:/evolution/instances
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   backend:
     build:
@@ -34,10 +56,9 @@ services:
       - "3000:3000"
     env_file:
       - ./backend/.env
-    environment:
-      - EVOLUTION_API_URL=http://evolution-api:8080
     depends_on:
       - evolution-api
 
 volumes:
+  postgres_data:
   evolution_instances:
