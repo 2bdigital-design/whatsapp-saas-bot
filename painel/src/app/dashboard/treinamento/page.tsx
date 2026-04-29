@@ -29,32 +29,41 @@ export default function TreinamentoPage() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Treinar o Bot</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Treinar o Assistente</h1>
       <p className="text-gray-500 text-sm mb-6">
-        Envie documentos com informações da sua empresa. O bot usará esses arquivos para responder clientes.
+        Envie documentos com informações sobre a sua empresa, produtos e serviços.
+        O assistente aprende com esses ficheiros para responder melhor aos seus clientes.
       </p>
-      <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-green-300 transition-colors">
-        <Upload className="mx-auto text-gray-300 mb-3" size={40} />
-        <p className="text-gray-500 text-sm mb-3">PDF, DOCX ou TXT — máx. 20 MB</p>
-        <label className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-green-700 transition">
-          {uploading ? 'Enviando...' : 'Escolher arquivo'}
+      <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center hover:border-green-300 transition-colors">
+        <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Upload className="text-green-600" size={24} />
+        </div>
+        <p className="font-medium text-gray-700 mb-1">Arraste um ficheiro ou clique para escolher</p>
+        <p className="text-gray-400 text-sm mb-4">PDF, DOCX ou TXT — máx. 20 MB</p>
+        <label className="bg-green-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-green-700 transition inline-block">
+          {uploading ? 'A enviar...' : 'Escolher ficheiro'}
           <input
             type="file" accept=".pdf,.docx,.txt"
             onChange={handleUpload} className="hidden" disabled={uploading}
           />
         </label>
       </div>
-      {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
+      {error && (
+        <p className="text-red-500 text-sm mt-3 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+      )}
       {files.length > 0 && (
-        <ul className="mt-5 space-y-2">
-          {files.map((f, i) => (
-            <li key={i} className="flex items-center gap-2 text-sm text-gray-700 bg-green-50 rounded-lg px-4 py-2">
-              <FileText size={16} className="text-green-600" />
-              {f}
-              <CheckCircle size={16} className="text-green-600 ml-auto" />
-            </li>
-          ))}
-        </ul>
+        <div className="mt-5">
+          <p className="text-sm font-medium text-gray-700 mb-2">Ficheiros enviados</p>
+          <ul className="space-y-2">
+            {files.map((f, i) => (
+              <li key={i} className="flex items-center gap-3 text-sm text-gray-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+                <FileText size={16} className="text-green-600 flex-shrink-0" />
+                <span className="flex-1 truncate">{f}</span>
+                <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

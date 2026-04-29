@@ -5,3 +5,7 @@ dist/
 .env.local
 *.log
 .DS_Store
+*.mjs
+painel/.env.production
+painel/.env.local
+backend/.env

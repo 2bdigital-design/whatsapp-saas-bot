@@ -22,7 +22,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SERVER_URL=http://${VPS_IP}:8080
+      - SERVER_URL=https://api.atende-bem.online
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
@@ -36,7 +36,7 @@ services:
       - CACHE_REDIS_ENABLED=false
       - CACHE_LOCAL_ENABLED=true
       - WEBHOOK_GLOBAL_ENABLED=true
-      - WEBHOOK_GLOBAL_URL=http://${VPS_IP}:3000/webhook/evolution
+      - WEBHOOK_GLOBAL_URL=https://api.atende-bem.online/webhook/evolution
       - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
       - DEL_INSTANCE=false
       - LOG_LEVEL=ERROR
@@ -59,6 +59,42 @@ services:
     depends_on:
       - evolution-api
 
+  painel:
+    build:
+      context: ./painel
+      dockerfile: Dockerfile
+    container_name: painel
+    restart: always
+    env_file:
+      - ./painel/.env.production
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_conf:/etc/letsencrypt:ro
+    depends_on:
+      - painel
+      - backend
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
 volumes:
   postgres_data:
   evolution_instances:
+  certbot_www:
+  certbot_conf:

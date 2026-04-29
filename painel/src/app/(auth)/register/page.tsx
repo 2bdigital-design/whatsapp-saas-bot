@@ -33,7 +33,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // user pode ser retornado mesmo sem confirmar email
     const userId = data.user?.id ?? data.session?.user?.id;
     if (!userId) {
       setError('Conta criada! Verifique o seu e-mail para confirmar e depois faça login.');
@@ -64,15 +63,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8">
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-green-600">Criar Conta</h1>
-          <p className="text-gray-500 text-sm mt-1">Configure seu bot em minutos</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white py-8">
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-gray-100">
+        <div className="mb-7 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-green-600 rounded-2xl mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Crie a sua conta</h1>
+          <p className="text-gray-500 text-sm mt-1">Configure o seu assistente em minutos</p>
         </div>
         <form onSubmit={handleRegister} className="space-y-4">
           {[
-            { name: 'name', label: 'Seu nome', placeholder: 'João Silva' },
+            { name: 'name', label: 'O seu nome', placeholder: 'João Silva' },
             { name: 'email', label: 'E-mail', placeholder: 'joao@empresa.com', type: 'email' },
             { name: 'password', label: 'Senha', placeholder: '••••••••', type: 'password' },
             { name: 'companyName', label: 'Nome da empresa', placeholder: 'Empresa ABC' },
@@ -86,7 +90,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 placeholder={f.placeholder}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
               />
             </div>
           ))}
@@ -97,30 +101,31 @@ export default function RegisterPage() {
               value={form.businessType}
               onChange={handleChange}
               required
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition bg-white"
             >
-              <option value="">Selecione...</option>
+              <option value="">Selecione o segmento...</option>
               <option value="Varejo / E-commerce">Varejo / E-commerce</option>
               <option value="Saúde / Clínica">Saúde / Clínica</option>
               <option value="Educação / Cursos">Educação / Cursos</option>
               <option value="Advocacia / Jurídico">Advocacia / Jurídico</option>
               <option value="Imobiliária">Imobiliária</option>
               <option value="Restaurante / Delivery">Restaurante / Delivery</option>
+              <option value="Beleza / Estética">Beleza / Estética</option>
               <option value="Outro">Outro</option>
             </select>
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition"
+            className="w-full bg-green-600 text-white py-2.5 rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50 transition mt-2"
           >
-            {loading ? 'Criando conta...' : 'Criar conta e configurar bot'}
+            {loading ? 'Criando conta...' : 'Começar agora — é grátis'}
           </button>
         </form>
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="text-center text-sm text-gray-500 mt-6">
           Já tem conta?{' '}
-          <a href="/login" className="text-green-600 hover:underline">Entrar</a>
+          <a href="/login" className="text-green-600 hover:underline font-medium">Entrar</a>
         </p>
       </div>
     </div>
