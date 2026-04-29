@@ -58,6 +58,20 @@ export default async function tenantRoutes(app: FastifyInstance) {
     return reply.send({ success: true, tenant: { id: tenant.id, slug } });
   });
 
+  app.post('/:slug/setup-instance', async (req, reply) => {
+    const { slug } = req.params as { slug: string };
+    try {
+      const data = await createInstance(slug);
+      log('info', 'Instância criada', { slug });
+      return reply.send({ success: true, data });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // Instance may already exist — try to get QR code anyway
+      log('warn', 'setup-instance error', { slug, msg });
+      return reply.status(400).send({ error: msg });
+    }
+  });
+
   app.get('/:slug/qrcode', async (req, reply) => {
     const { slug } = req.params as { slug: string };
     const data = await getQRCode(slug);
