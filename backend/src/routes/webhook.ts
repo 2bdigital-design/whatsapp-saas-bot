@@ -101,9 +101,4 @@ export default async function webhookRoutes(app: FastifyInstance) {
     return reply.send({ ok: true });
   });
 
-  // ── Rota antiga Evolution (mantida para compatibilidade durante transição) ──
-  app.post('/evolution', async (req, reply) => {
-    log('warn', 'Webhook Evolution recebido (migrado para Cloud API)');
-    return reply.send({ ok: true });
-  });
 }

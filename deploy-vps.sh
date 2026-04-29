@@ -1,7 +1,7 @@
 #!/bin/bash
 # ================================================================
 # Deploy script para Hetzner VPS
-# Copia código, instala Docker e sobe os serviços
+# Copia código e sobe os serviços via docker-compose.prod.yml
 # ================================================================
 
 set -e
@@ -12,23 +12,18 @@ APP_DIR="/opt/whatsapp-saas-bot"
 
 echo "==> Conectando ao VPS $VPS_IP..."
 
-# Instalar Docker e Docker Compose no VPS
+# Instalar Docker e Docker Compose no VPS (se necessário)
 ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP bash <<'ENDSSH'
 set -e
-echo "==> Atualizando sistema..."
-apt-get update -qq
+if ! command -v docker &>/dev/null; then
+  echo "==> Instalando Docker..."
+  apt-get update -qq
+  curl -fsSL https://get.docker.com | sh
+  apt-get install -y docker-compose-plugin
+fi
 
-echo "==> Instalando Docker..."
-curl -fsSL https://get.docker.com | sh
-
-echo "==> Instalando Docker Compose plugin..."
-apt-get install -y docker-compose-plugin
-
-echo "==> Docker instalado:"
-docker --version
-docker compose version
-
-echo "==> Criando diretório da aplicação..."
+echo "==> Docker: $(docker --version)"
+echo "==> Docker Compose: $(docker compose version)"
 mkdir -p /opt/whatsapp-saas-bot/backend
 ENDSSH
 
@@ -40,8 +35,6 @@ rsync -avz --exclude='node_modules' --exclude='.git' --exclude='dist' \
 echo "==> Iniciando serviços no VPS..."
 ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_IP bash <<ENDSSH
 cd $APP_DIR
-export VPS_IP="$VPS_IP"
-export EVOLUTION_API_KEY="whatsapp-saas-secret-key-2024"
 
 echo "==> Building e iniciando containers..."
 docker compose -f docker-compose.prod.yml up -d --build
@@ -54,5 +47,9 @@ ENDSSH
 
 echo ""
 echo "✅ Deploy completo!"
-echo "   Evolution API: http://$VPS_IP:8080"
-echo "   Backend API:   http://$VPS_IP:3000"
+echo "   Backend API: https://api.atende-bem.online"
+echo "   Painel:      https://app.atende-bem.online"
+echo ""
+echo "📋 Próximo passo: Configure o Webhook no Meta Developer Console"
+echo "   URL: https://api.atende-bem.online/webhook/meta"
+echo "   Verify Token: (valor de WEBHOOK_VERIFY_TOKEN no backend/.env)"

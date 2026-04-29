@@ -2,31 +2,10 @@ version: "3.8"
 
 # ================================================================
 # Docker Compose para DESENVOLVIMENTO LOCAL
-# Para produção, use Railway (Evolution API + Backend) + Upstash
+# Para produção, use docker-compose.prod.yml no VPS
 # ================================================================
 
 services:
-  evolution-api:
-    image: atendai/evolution-api:latest
-    container_name: evolution_api
-    restart: always
-    ports:
-      - "8080:8080"
-    environment:
-      - SERVER_URL=http://localhost:8080
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-minha_chave_secreta}
-      - DATABASE_ENABLED=false
-      - REDIS_ENABLED=true
-      - REDIS_URI=redis://redis:6379
-      - WEBHOOK_GLOBAL_ENABLED=true
-      - WEBHOOK_GLOBAL_URL=${WEBHOOK_URL:-http://backend:3000/webhook/evolution}
-      - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
-      - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
-    volumes:
-      - ./evolution/instances:/evolution/instances
-    depends_on:
-      - redis
-
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -34,7 +13,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./redis/data:/data
+      - redis_data:/data
     command: redis-server --appendonly yes
 
   backend:
@@ -51,7 +30,6 @@ services:
       - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
-      - evolution-api
 
 volumes:
   redis_data:
