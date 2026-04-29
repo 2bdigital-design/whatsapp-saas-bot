@@ -6,13 +6,15 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
 
-  const { data: tu } = await supabase
+  const { data: tu, error } = await supabase
     .from('tenant_users')
-    .select('tenants(system_prompt, bot_name)')
+    .select('tenants(system_prompt)')
     .eq('user_id', user.id)
     .single();
 
-  const tenant = tu?.tenants as unknown as { system_prompt?: string; bot_name?: string } | null;
+  if (error) return NextResponse.json({ instrucoes: '' });
+
+  const tenant = tu?.tenants as unknown as { system_prompt?: string } | null;
   return NextResponse.json({ instrucoes: tenant?.system_prompt ?? '' });
 }
 
