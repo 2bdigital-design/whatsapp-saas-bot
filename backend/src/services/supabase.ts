@@ -5,6 +5,9 @@ export const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 );
 
+// Alias para uso em Storage e operações admin
+export const supabaseAdmin = supabase;
+
 export async function getTenantBySlug(slug: string) {
   const { data, error } = await supabase
     .from('tenants')
@@ -16,15 +19,23 @@ export async function getTenantBySlug(slug: string) {
   return data;
 }
 
-export async function getTenantByPhoneNumberId(phoneNumberId: string) {
-  const { data, error } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('wa_phone_number_id', phoneNumberId)
-    .eq('active', true)
-    .single();
-  if (error) return null;
-  return data;
+/**
+ * Encontra um tenant pelo Phone Number ID do WhatsApp Cloud API.
+ * As credenciais são guardadas no Supabase Storage (sem necessidade de colunas adicionais).
+ */
+export async function getTenantByPhoneNumberId(
+  phoneNumberId: string
+): Promise<(Awaited<ReturnType<typeof getTenantBySlug>> & { wa_access_token?: string }) | null> {
+  // Importação dinâmica para evitar dependência circular
+  const { getCredsByPhoneNumberId } = await import('./wa-credentials');
+  const creds = await getCredsByPhoneNumberId(phoneNumberId);
+  if (!creds) return null;
+  try {
+    const tenant = await getTenantBySlug(creds.slug);
+    return { ...tenant, wa_access_token: creds.accessToken };
+  } catch {
+    return null;
+  }
 }
 
 export async function getOrCreateConversation(tenantId: string, phone: string) {

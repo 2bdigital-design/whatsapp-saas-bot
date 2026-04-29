@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { supabase } from '../services/supabase';
+import { saveWaCredentials, getCredsBySlug } from '../services/wa-credentials';
 import { createAssistant, buildInstructions } from '../services/openai';
 import { log } from '../utils/logger';
 
@@ -70,14 +71,12 @@ export default async function tenantRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'phoneNumberId e accessToken são obrigatórios' });
     }
 
-    const { error } = await supabase
-      .from('tenants')
-      .update({ wa_phone_number_id: phoneNumberId, wa_access_token: accessToken })
-      .eq('slug', slug);
-
-    if (error) {
-      log('error', 'Erro ao salvar credenciais WA', { slug, error: error.message });
-      return reply.status(500).send({ error: error.message });
+    try {
+      await saveWaCredentials(slug, phoneNumberId, accessToken);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      log('error', 'Erro ao salvar credenciais WA', { slug, msg });
+      return reply.status(500).send({ error: msg });
     }
 
     log('info', 'Credenciais WA Cloud API salvas', { slug });
@@ -89,15 +88,8 @@ export default async function tenantRoutes(app: FastifyInstance) {
    */
   app.get('/:slug/status', async (req, reply) => {
     const { slug } = req.params as { slug: string };
-
-    const { data: tenant } = await supabase
-      .from('tenants')
-      .select('wa_phone_number_id, wa_access_token')
-      .eq('slug', slug)
-      .single();
-
-    const configured = !!(tenant?.wa_phone_number_id && tenant?.wa_access_token);
-    return reply.send({ connected: configured });
+    const creds = await getCredsBySlug(slug).catch(() => null);
+    return reply.send({ connected: !!(creds?.phoneNumberId && creds?.accessToken) });
   });
 
   app.delete('/:slug', async (req, reply) => {

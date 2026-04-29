@@ -7,6 +7,7 @@ import {
   updateConversationThread,
   setConversationStatus,
 } from '../services/supabase';
+import { getCredsBySlug } from '../services/wa-credentials';
 import { chat } from '../services/openai';
 import { sendTextMessage } from '../services/whatsapp-cloud';
 import { log } from '../utils/logger';
@@ -36,9 +37,14 @@ export const worker = new Worker(
       return;
     }
 
-    // Credenciais WhatsApp Cloud API (vêm do job ou do tenant no DB)
-    const pnId  = phoneNumberId  ?? tenant.wa_phone_number_id;
-    const token = waAccessToken  ?? tenant.wa_access_token;
+    // Credenciais WhatsApp Cloud API: vêm do job ou do Supabase Storage
+    let pnId  = phoneNumberId;
+    let token = waAccessToken;
+    if (!pnId || !token) {
+      const creds = await getCredsBySlug(slug).catch(() => null);
+      pnId  = creds?.phoneNumberId;
+      token = creds?.accessToken;
+    }
 
     if (!pnId || !token) {
       log('warn', `Tenant sem credenciais WA Cloud API: ${slug}`);
