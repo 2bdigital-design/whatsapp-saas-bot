@@ -24,15 +24,24 @@ export default function RegisterPage() {
     const { data, error: authError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
     });
 
-    if (authError || !data.user) {
-      setError(authError?.message ?? 'Erro ao criar conta.');
+    if (authError) {
+      setError(authError.message ?? 'Erro ao criar conta.');
       setLoading(false);
       return;
     }
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tenants/create`, {
+    // user pode ser retornado mesmo sem confirmar email
+    const userId = data.user?.id ?? data.session?.user?.id;
+    if (!userId) {
+      setError('Conta criada! Verifique o seu e-mail para confirmar e depois faça login.');
+      setLoading(false);
+      return;
+    }
+
+    const res = await fetch(`/api/tenants/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -40,7 +49,7 @@ export default function RegisterPage() {
         email: form.email,
         companyName: form.companyName,
         businessType: form.businessType,
-        userId: data.user.id,
+        userId,
       }),
     });
 
