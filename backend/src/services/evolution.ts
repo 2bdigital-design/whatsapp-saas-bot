@@ -16,11 +16,26 @@ export async function sendTextMessage(instanceName: string, phone: string, text:
 }
 
 export async function createInstance(instanceName: string) {
-  const res = await client.post('/instance/create', {
+  const body: Record<string, unknown> = {
     instanceName,
     qrcode: true,
     integration: 'WHATSAPP-BAILEYS',
-  });
+  };
+
+  // Optional residential proxy to bypass data-center IP blocks.
+  // Set PROXY_HOST, PROXY_PORT, PROXY_PROTOCOL (http|socks5),
+  // and optionally PROXY_USER / PROXY_PASS in backend/.env
+  if (process.env.PROXY_HOST && process.env.PROXY_PORT) {
+    body.proxy = {
+      host: process.env.PROXY_HOST,
+      port: Number(process.env.PROXY_PORT),
+      protocol: process.env.PROXY_PROTOCOL ?? 'http',
+      ...(process.env.PROXY_USER ? { username: process.env.PROXY_USER } : {}),
+      ...(process.env.PROXY_PASS ? { password: process.env.PROXY_PASS } : {}),
+    };
+  }
+
+  const res = await client.post('/instance/create', body);
   return res.data;
 }
 

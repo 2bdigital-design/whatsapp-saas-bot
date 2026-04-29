@@ -20,7 +20,6 @@ export async function GET() {
     { headers: { Authorization: `Bearer ${process.env.INTERNAL_SECRET}` } }
   );
 
-  const data = await res.json();
-  const connected = data?.instance?.state === 'open';
-  return NextResponse.json({ connected, state: data?.instance?.state });
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json({ connected: data?.connected ?? false });
 }

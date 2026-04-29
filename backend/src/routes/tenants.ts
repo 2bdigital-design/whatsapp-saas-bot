@@ -1,7 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { supabase } from '../services/supabase';
 import { createAssistant, buildInstructions } from '../services/openai';
-import { createInstance, getQRCode, getInstanceStatus, deleteInstance } from '../services/evolution';
 import { log } from '../utils/logger';
 
 export default async function tenantRoutes(app: FastifyInstance) {
@@ -46,8 +45,6 @@ export default async function tenantRoutes(app: FastifyInstance) {
 
     await supabase.from('tenants').update({ assistant_id: assistantId }).eq('id', tenant.id);
 
-    await createInstance(slug);
-
     await supabase.from('tenant_users').insert({
       tenant_id: tenant.id,
       user_id: userId,
@@ -58,37 +55,55 @@ export default async function tenantRoutes(app: FastifyInstance) {
     return reply.send({ success: true, tenant: { id: tenant.id, slug } });
   });
 
-  app.post('/:slug/setup-instance', async (req, reply) => {
+  /**
+   * Salva as credenciais WhatsApp Cloud API do tenant.
+   * Body: { phoneNumberId, accessToken }
+   */
+  app.post('/:slug/whatsapp-credentials', async (req, reply) => {
     const { slug } = req.params as { slug: string };
-    try {
-      const data = await createInstance(slug);
-      log('info', 'Instância criada', { slug });
-      return reply.send({ success: true, data });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      // Instance may already exist — try to get QR code anyway
-      log('warn', 'setup-instance error', { slug, msg });
-      return reply.status(400).send({ error: msg });
+    const { phoneNumberId, accessToken } = req.body as {
+      phoneNumberId: string;
+      accessToken: string;
+    };
+
+    if (!phoneNumberId || !accessToken) {
+      return reply.status(400).send({ error: 'phoneNumberId e accessToken são obrigatórios' });
     }
+
+    const { error } = await supabase
+      .from('tenants')
+      .update({ wa_phone_number_id: phoneNumberId, wa_access_token: accessToken })
+      .eq('slug', slug);
+
+    if (error) {
+      log('error', 'Erro ao salvar credenciais WA', { slug, error: error.message });
+      return reply.status(500).send({ error: error.message });
+    }
+
+    log('info', 'Credenciais WA Cloud API salvas', { slug });
+    return reply.send({ success: true });
   });
 
-  app.get('/:slug/qrcode', async (req, reply) => {
-    const { slug } = req.params as { slug: string };
-    const data = await getQRCode(slug);
-    return reply.send(data);
-  });
-
+  /**
+   * Retorna status da conexão WhatsApp do tenant.
+   */
   app.get('/:slug/status', async (req, reply) => {
     const { slug } = req.params as { slug: string };
-    const data = await getInstanceStatus(slug);
-    return reply.send(data);
+
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('wa_phone_number_id, wa_access_token')
+      .eq('slug', slug)
+      .single();
+
+    const configured = !!(tenant?.wa_phone_number_id && tenant?.wa_access_token);
+    return reply.send({ connected: configured });
   });
 
   app.delete('/:slug', async (req, reply) => {
     const { slug } = req.params as { slug: string };
 
     await supabase.from('tenants').update({ active: false }).eq('slug', slug);
-    await deleteInstance(slug);
 
     return reply.send({ success: true });
   });

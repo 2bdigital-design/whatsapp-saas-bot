@@ -16,6 +16,17 @@ export async function getTenantBySlug(slug: string) {
   return data;
 }
 
+export async function getTenantByPhoneNumberId(phoneNumberId: string) {
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('wa_phone_number_id', phoneNumberId)
+    .eq('active', true)
+    .single();
+  if (error) return null;
+  return data;
+}
+
 export async function getOrCreateConversation(tenantId: string, phone: string) {
   const { data: existing } = await supabase
     .from('conversations')
